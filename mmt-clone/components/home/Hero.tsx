@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import SearchGrid from "./SearchGrid";
+import ExploreBar from "../ExploreBar";
 
 export default function Hero() {
   const [tripType, setTripType] = useState("oneway");
@@ -12,7 +13,7 @@ export default function Hero() {
   const [toCity, setToCity] = useState("Mumbai");
 
   return (
-    <section className="h-[360px] bg-gradient-to-b from-[#041322] to-[#123456] pt-8">
+    <section className="relative bg-gradient-to-b from-[#041322] to-[#123456] pt-8 pb-32">
       <div className="mx-auto max-w-7xl px-6">
         <div className="relative mx-auto mt-12 max-w-7xl rounded-2xl bg-white p-8 shadow-xl">
           {/* Trip Type */}
@@ -103,12 +104,18 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Floating Search */}
+          {/* SEARCH BUTTON */}
 
           <button className="absolute -bottom-14 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-20 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-blue-700">
             SEARCH
           </button>
         </div>
+      </div>
+
+      {/* Explore Bar */}
+
+      <div className="absolute -bottom-24 left-1/2 z-30 w-full -translate-x-1/2">
+        <ExploreBar />
       </div>
     </section>
   );

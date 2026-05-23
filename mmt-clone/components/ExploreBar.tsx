@@ -2,16 +2,21 @@ import { exploreLinks } from "./data/exploreLinks";
 
 export default function ExploreBar() {
   return (
-    <div className="mx-auto max-w-5xl px-4">
-      <div className="flex items-center justify-between rounded-full bg-white px-8 py-4 shadow-lg">
+    <div className="mx-auto max-w-4xl px-4">
+      <div className="flex items-center justify-around rounded-full bg-white px-6 py-3 shadow-xl">
         {exploreLinks.map((item) => (
-          <div key={item.title} className="flex items-center gap-3">
-            <span className="text-2xl">{item.icon}</span>
+          <div
+            key={item.title}
+            className="flex cursor-pointer items-center gap-2 px-2"
+          >
+            <span className="text-lg">{item.icon}</span>
 
             <div>
-              <h4 className="text-sm font-semibold">{item.title}</h4>
+              <h4 className="text-xs leading-none font-semibold">
+                {item.title}
+              </h4>
 
-              <p className="text-xs text-gray-500">{item.subtitle}</p>
+              <p className="mt-1 text-[10px] text-gray-500">{item.subtitle}</p>
             </div>
           </div>
         ))}
