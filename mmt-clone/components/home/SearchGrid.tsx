@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import CityDropdown from "../CityDropdown";
+import TravellerPopup from "./TravellerPopup";
 
-const cities = [
-  "Delhi",
-  "Mumbai",
-  "Bangalore",
-  "Hyderabad",
-  "Chandigarh",
-  "Pune",
+const fares = [
+  "Regular",
+  "Student",
+  "Senior Citizen",
+  "Armed Forces",
+  "Doctor & Nurses",
 ];
 
 type SearchGridProps = {
@@ -16,6 +17,21 @@ type SearchGridProps = {
   toCity: string;
   setFromCity: React.Dispatch<React.SetStateAction<string>>;
   setToCity: React.Dispatch<React.SetStateAction<string>>;
+  tripType: string;
+
+  departureDate: string;
+  setDepartureDate: React.Dispatch<React.SetStateAction<string>>;
+
+  travellers: number;
+  setTravellers: React.Dispatch<React.SetStateAction<number>>;
+
+  returnDate: string;
+  setReturnDate: React.Dispatch<React.SetStateAction<string>>;
+
+  travelClass: string;
+  setTravelClass: React.Dispatch<React.SetStateAction<string>>;
+
+  onSearch: () => void;
 };
 
 export default function SearchGrid({
@@ -23,85 +39,186 @@ export default function SearchGrid({
   toCity,
   setFromCity,
   setToCity,
+  tripType,
+  departureDate,
+  setDepartureDate,
+  travellers,
+  setTravellers,
+  travelClass,
+  setTravelClass,
+  returnDate,
+  setReturnDate,
+  onSearch,
 }: SearchGridProps) {
-  const [departureDate, setDepartureDate] = useState("2026-05-25");
-  const [travellers, setTravellers] = useState("1 Adult");
+  const [showFromDropdown, setShowFromDropdown] = useState(false);
+
+  const [showToDropdown, setShowToDropdown] = useState(false);
+
+  const [fromSearch, setFromSearch] = useState("");
+
+  const [toSearch, setToSearch] = useState("");
+
+  const [showTraveller, setShowTraveller] = useState(false);
+
+  const [adults, setAdults] = useState(1);
+
+  const [children, setChildren] = useState(0);
+
+  const [infants, setInfants] = useState(0);
+
+  const [fareType, setFareType] = useState("Regular");
+
+  useEffect(() => {
+    setTravellers(adults + children + infants);
+  }, [adults, children, infants, setTravellers]);
+
+  const swapCities = () => {
+    const temp = fromCity;
+
+    setFromCity(toCity);
+    setToCity(temp);
+  };
+  useEffect(() => {
+    if (returnDate && departureDate && returnDate < departureDate) {
+      setReturnDate(departureDate);
+    }
+  }, [departureDate, returnDate, setReturnDate]);
 
   return (
-    <div className="mt-6 grid h-[95px] grid-cols-4 overflow-visible rounded-xl border border-gray-300">
-      {/* FROM */}
+    <div className="rounded-3xl bg-white p-6">
+      {" "}
+      <div className="relative">
+        {" "}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div
+            className="relative cursor-pointer rounded-2xl border p-4"
+            onClick={() => {
+              setFromSearch("");
+              setShowFromDropdown(true);
+              setShowToDropdown(false);
+            }}
+          >
+            {" "}
+            <p className="text-sm text-gray-500">From</p>
+            <h2 className="mt-1 text-xl font-bold">{fromCity}</h2>
+            {showFromDropdown && (
+              <CityDropdown
+                search={fromSearch}
+                setSearch={setFromSearch}
+                setSelected={(city) => {
+                  setFromCity(city);
+                  setFromSearch("");
+                  setShowFromDropdown(false);
+                }}
+              />
+            )}
+          </div>
 
-      <div className="relative border-r px-4 py-4 transition hover:bg-gray-50">
-        <p className="text-xs text-gray-500">From</p>
+          <div
+            className="relative cursor-pointer rounded-2xl border p-4"
+            onClick={() => {
+              setToSearch("");
+              setShowToDropdown(true);
+              setShowFromDropdown(false);
+            }}
+          >
+            <p className="text-sm text-gray-500">To</p>
 
-        <select
-          value={fromCity}
-          onChange={(e) => setFromCity(e.target.value)}
-          className="mt-2 w-full cursor-pointer appearance-none bg-transparent text-3xl font-bold outline-none"
-        >
-          {cities.map((city) => (
-            <option key={city}>{city}</option>
-          ))}
-        </select>
+            <h2 className="mt-1 text-xl font-bold">{toCity}</h2>
 
+            {showToDropdown && (
+              <CityDropdown
+                search={toSearch}
+                setSearch={setToSearch}
+                setSelected={(city) => {
+                  setToCity(city);
+                  setToSearch("");
+                  setShowToDropdown(false);
+                }}
+              />
+            )}
+          </div>
+
+          <div className="rounded-2xl border p-4">
+            <p className="text-sm text-gray-500">Departure</p>
+
+            <input
+              type="date"
+              min={new Date().toISOString().split("T")[0]}
+              value={departureDate}
+              onChange={(e) => setDepartureDate(e.target.value)}
+              className="mt-2 w-full outline-none"
+            />
+          </div>
+          {tripType === "round" && (
+            <div className="rounded-2xl border p-4">
+              <p className="text-sm text-gray-500">Return</p>
+
+              <input
+                type="date"
+                min={departureDate || new Date().toISOString().split("T")[0]}
+                value={returnDate}
+                onChange={(e) => setReturnDate(e.target.value)}
+                className="mt-2 w-full outline-none"
+              />
+            </div>
+          )}
+
+          <div
+            className="relative cursor-pointer rounded-2xl border p-4"
+            onClick={() => setShowTraveller(true)}
+          >
+            <p className="text-sm text-gray-500">Travellers & Class</p>
+
+            <h2 className="mt-1 text-xl font-bold">{travellers} Traveller</h2>
+
+            <p className="text-sm text-gray-500">{travelClass}</p>
+
+            {showTraveller && (
+              <TravellerPopup
+                adults={adults}
+                children={children}
+                infants={infants}
+                setAdults={setAdults}
+                setChildren={setChildren}
+                setInfants={setInfants}
+                travelClass={travelClass}
+                setTravelClass={setTravelClass}
+                onClose={() => setShowTraveller(false)}
+              />
+            )}
+          </div>
+        </div>
         <button
-          onClick={() => {
-            const temp = fromCity;
-            setFromCity(toCity);
-            setToCity(temp);
+          onClick={(e) => {
+            e.stopPropagation();
+            swapCities();
           }}
-          className="absolute top-1/2 right-[-16px] z-20 h-8 w-8 -translate-y-1/2 rounded-full border bg-white shadow-md"
+          className="absolute top-8 left-1/4 z-20 hidden h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border bg-white shadow-md md:flex"
         >
           ⇄
         </button>
       </div>
-
-      {/* TO */}
-
-      <div className="border-r px-4 py-4 hover:bg-gray-50">
-        <p className="text-xs text-gray-500">To</p>
-
-        <select
-          value={toCity}
-          onChange={(e) => setToCity(e.target.value)}
-          className="mt-2 w-full appearance-none bg-transparent text-3xl font-bold outline-none"
-        >
-          {cities.map((city) => (
-            <option key={city}>{city}</option>
-          ))}
-        </select>
+      <div className="mt-6 flex flex-wrap gap-3">
+        {fares.map((fare) => (
+          <button
+            key={fare}
+            onClick={() => setFareType(fare)}
+            className={`rounded-full border px-4 py-2 ${
+              fareType === fare ? "bg-blue-500 text-white" : ""
+            }`}
+          >
+            {fare}
+          </button>
+        ))}
       </div>
-
-      {/* DATE */}
-
-      <div className="border-r px-4 py-5 hover:bg-gray-50">
-        <p className="text-xs text-gray-500">Departure</p>
-
-        <input
-          type="date"
-          value={departureDate}
-          onChange={(e) => setDepartureDate(e.target.value)}
-          className="mt-3 text-2xl font-bold outline-none"
-        />
-      </div>
-
-      {/* TRAVELLERS */}
-
-      <div className="px-4 py-5 hover:bg-gray-50">
-        <p className="text-xs text-gray-500">Travellers & Class</p>
-
-        <select
-          value={travellers}
-          onChange={(e) => setTravellers(e.target.value)}
-          className="mt-3 appearance-none bg-transparent text-3xl font-bold outline-none"
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={onSearch}
+          className="rounded-full bg-blue-600 px-20 py-3 text-lg font-bold text-white"
         >
-          <option>1 Adult</option>
-          <option>2 Adults</option>
-          <option>3 Adults</option>
-          <option>4 Adults</option>
-        </select>
-
-        <p className="mt-1 text-xs text-gray-500">Economy</p>
+          SEARCH
+        </button>
       </div>
     </div>
   );
