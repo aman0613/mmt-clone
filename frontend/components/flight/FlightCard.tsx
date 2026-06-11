@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 type Flight = {
   id: number;
   airline: string;
-  departure: string;
-  arrival: string;
+  departureTime: string;
+  arrivalTime: string;
   duration: string;
   price: number;
   stops: number;
@@ -33,7 +33,7 @@ export default function FlightCard({ flight, from, to }: FlightCardProps) {
         </div>
 
         <div>
-          <p className="text-xl font-bold">{flight.departure}</p>
+          <p className="text-xl font-bold">{flight.departureTime}</p>
 
           <p className="text-sm text-gray-500">{from}</p>
         </div>
@@ -41,7 +41,7 @@ export default function FlightCard({ flight, from, to }: FlightCardProps) {
         <div>{flight.duration}</div>
 
         <div>
-          <p className="text-xl font-bold">{flight.arrival}</p>
+          <p className="text-xl font-bold">{flight.arrivalTime}</p>
 
           <p className="text-sm text-gray-500">{to}</p>
         </div>

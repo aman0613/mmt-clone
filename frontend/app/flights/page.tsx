@@ -3,17 +3,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import SearchGrid from "../../components/home/SearchGrid";
-
+import { getFlights } from "@/services/flightService";
+import { Flight } from "@/types/flight";
 import FlightCard from "../../components/flight/FlightCard";
-type Flight = {
-  id: number;
-  airline: string;
-  departure: string;
-  arrival: string;
-  duration: string;
-  price: number;
-  stops: number;
-};
 
 export default function FlightsPage() {
   const router = useRouter();
@@ -63,11 +55,9 @@ export default function FlightsPage() {
     router.push(`/flights?${params.toString()}`);
   };
   useEffect(() => {
-    const getFlights = async () => {
+    const fetchFlights = async () => {
       try {
-        const res = await fetch("/api/flights");
-
-        const data = await res.json();
+        const data = await getFlights(from || undefined, to || undefined);
 
         setFlights(data);
       } catch (err) {
@@ -77,8 +67,8 @@ export default function FlightsPage() {
       }
     };
 
-    getFlights();
-  }, []);
+    fetchFlights();
+  }, [from, to]);
   useEffect(() => {
     if (tripType === "oneway") {
       setReturnFlightDate("");
@@ -94,13 +84,20 @@ export default function FlightsPage() {
       return priceMatch && stopMatch;
     })
     .sort((a, b) => {
-      if (sortBy === "price") {
-        return a.price - b.price;
+      switch (sortBy) {
+        case "price":
+          return a.price - b.price;
+
+        case "price_desc":
+          return b.price - a.price;
+
+        case "duration":
+          return parseInt(a.duration) - parseInt(b.duration);
+
+        default:
+          return 0;
       }
-
-      return parseInt(a.duration) - parseInt(b.duration);
     });
-
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       {/* Summary */}

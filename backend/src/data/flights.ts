@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { Flight } from "../types/flight";
 
-const flights = [
+export const flights: Flight[] = [
   {
     id: 1,
     airline: "IndiGo",
-    from: "Hyderabad",
+    from: "Delhi",
     to: "Mumbai",
     departureTime: "06:30",
     arrivalTime: "08:45",
@@ -16,7 +16,7 @@ const flights = [
   {
     id: 2,
     airline: "Air India",
-    from: "Hyderabad",
+    from: "Delhi",
     to: "Mumbai",
     departureTime: "09:15",
     arrivalTime: "11:40",
@@ -61,7 +61,3 @@ const flights = [
     stops: 1,
   },
 ];
-
-export async function GET() {
-  return NextResponse.json(flights);
-}

@@ -6,19 +6,8 @@ import FlightDetails from "@/components/flight/FlightDetails";
 import BaggageInfo from "@/components/flight/BaggageInfo";
 import FareSummary from "@/components/flight/FareSummary";
 import CancellationPolicy from "@/components/flight/CancellationPolicy";
-
-interface Flight {
-  id: number;
-  airline: string;
-  from: string;
-  to: string;
-  departureTime: string;
-  arrivalTime: string;
-  duration: string;
-  price: number;
-  stops: number;
-}
-
+import { Flight } from "@/types/flight";
+import { getFlightById } from "@/services/flightService";
 export default function FlightDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -27,14 +16,9 @@ export default function FlightDetailsPage() {
 
   useEffect(() => {
     const fetchFlight = async () => {
-      const res = await fetch("/api/flights");
-      const data = await res.json();
+      const data = await getFlightById(id as string);
 
-      const selectedFlight = data.find(
-        (item: Flight) => item.id === Number(id),
-      );
-
-      setFlight(selectedFlight);
+      setFlight(data);
     };
 
     fetchFlight();

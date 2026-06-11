@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Flight } from "@/types/flight";
 import { Traveller } from "@/types/traveller";
-
+import { getFlightById } from "@/services/flightService";
 export default function BookingPage() {
   const params = useParams();
   const id = params.id;
@@ -28,20 +28,17 @@ export default function BookingPage() {
 
   useEffect(() => {
     const fetchFlight = async () => {
-      const res = await fetch("/api/flights");
+      try {
+        const data = await getFlightById(id as string);
 
-      const data = await res.json();
-
-      const selectedFlight = data.find(
-        (item: Flight) => item.id === Number(id),
-      );
-
-      setFlight(selectedFlight);
+        setFlight(data);
+      } catch (error) {
+        console.error(error);
+      }
     };
 
     fetchFlight();
   }, [id]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTraveller({
       ...traveller,
