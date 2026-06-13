@@ -1,29 +1,50 @@
 import { Booking } from "@/types/booking";
+import { API_BASE_URL } from "./api";
 
-const BOOKINGS_KEY = "bookings";
+export const getBookings = async (): Promise<Booking[]> => {
+  const response = await fetch(`${API_BASE_URL}/bookings`);
 
-export const getBookings = (): Booking[] => {
-  return JSON.parse(localStorage.getItem(BOOKINGS_KEY) || "[]");
+  if (!response.ok) {
+    throw new Error("Failed to fetch bookings");
+  }
+
+  return response.json();
 };
 
-export const createBooking = (booking: Booking): void => {
-  const bookings = getBookings();
+export const getBookingById = async (bookingId: number): Promise<Booking> => {
+  const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`);
 
-  localStorage.setItem(BOOKINGS_KEY, JSON.stringify([...bookings, booking]));
+  if (!response.ok) {
+    throw new Error("Booking not found");
+  }
+
+  return response.json();
 };
 
-export const getBookingById = (bookingId: number): Booking | undefined => {
-  const bookings = getBookings();
+export const createBooking = async (booking: Booking): Promise<Booking> => {
+  const response = await fetch(`${API_BASE_URL}/bookings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(booking),
+  });
 
-  return bookings.find((booking) => booking.bookingId === bookingId);
+  if (!response.ok) {
+    throw new Error("Failed to create booking");
+  }
+
+  return response.json();
 };
 
-export const cancelBooking = (bookingId: number): void => {
-  const bookings = getBookings();
+export const cancelBooking = async (bookingId: number): Promise<Booking> => {
+  const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel`, {
+    method: "PATCH",
+  });
 
-  const updatedBookings = bookings.filter(
-    (booking) => booking.bookingId !== bookingId,
-  );
+  if (!response.ok) {
+    throw new Error("Failed to cancel booking");
+  }
 
-  localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updatedBookings));
+  return response.json();
 };

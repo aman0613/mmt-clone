@@ -13,19 +13,27 @@ export default function MyTripsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
-    setBookings(getBookings());
+    const loadBookings = async () => {
+      const data = await getBookings();
+
+      setBookings(data);
+    };
+
+    loadBookings();
   }, []);
 
-  const cancelBooking = (bookingId: number) => {
+  const cancelBooking = async (bookingId: number) => {
     const confirmed = window.confirm(
       "Are you sure you want to cancel this booking?",
     );
 
     if (!confirmed) return;
 
-    deleteBooking(bookingId);
+    await deleteBooking(bookingId);
 
-    setBookings(getBookings());
+    const updatedBookings = await getBookings();
+
+    setBookings(updatedBookings);
   };
 
   return (

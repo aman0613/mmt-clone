@@ -6,16 +6,22 @@ import {
   cancelBooking,
 } from "../services/booking.service";
 
-export const getBookings = (_req: Request, res: Response): void => {
-  const bookings = getAllBookings();
+export const getBookings = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  const bookings = await getAllBookings();
 
   res.status(200).json(bookings);
 };
 
-export const getBooking = (req: Request, res: Response): void => {
+export const getBooking = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const bookingId = Number(req.params.id);
 
-  const booking = getBookingById(bookingId);
+  const booking = await getBookingById(bookingId);
 
   if (!booking) {
     res.status(404).json({
@@ -28,16 +34,21 @@ export const getBooking = (req: Request, res: Response): void => {
   res.status(200).json(booking);
 };
 
-export const createBookingHandler = (req: Request, res: Response): void => {
-  const booking = createBooking(req.body);
-
+export const createBookingHandler = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  console.log("Controller reached");
+  const booking = await createBooking(req.body);
   res.status(201).json(booking);
 };
-
-export const cancelBookingHandler = (req: Request, res: Response): void => {
+export const cancelBookingHandler = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const bookingId = Number(req.params.id);
 
-  const booking = cancelBooking(bookingId);
+  const booking = await cancelBooking(bookingId);
 
   if (!booking) {
     res.status(404).json({

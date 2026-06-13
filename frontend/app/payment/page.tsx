@@ -28,18 +28,18 @@ export default function PaymentPage() {
     }
   }, []);
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!flight || !traveller) return;
 
     const newBooking: Booking = {
       bookingId: Date.now(),
       ...flight,
       traveller,
-      status: "Confirmed",
+      status: "ACTIVE",
       bookedAt: new Date().toISOString(),
     };
 
-    createBooking(newBooking);
+    await createBooking(newBooking);
 
     router.push("/payment/success");
   };

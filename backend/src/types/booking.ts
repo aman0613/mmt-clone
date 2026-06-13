@@ -1,8 +1,7 @@
 import { Flight } from "./flight";
 
 export interface Traveller {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
 }

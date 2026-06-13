@@ -5,6 +5,7 @@ export const getFlights = async (
   from?: string,
   to?: string,
 ): Promise<Flight[]> => {
+  console.trace("getflight");
   const params = new URLSearchParams();
 
   if (from) {

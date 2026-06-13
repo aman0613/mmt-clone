@@ -15,7 +15,7 @@ export default function BookingDetailsPage({
     const loadBooking = async () => {
       const { bookingId } = await params;
 
-      const selectedBooking = getBookingById(Number(bookingId));
+      const selectedBooking = await getBookingById(Number(bookingId));
 
       setBooking(selectedBooking || null);
     };
@@ -38,7 +38,6 @@ export default function BookingDetailsPage({
                 {booking.status}
               </p>
             </div>
-
             <div className="text-right">
               <p className="text-sm text-gray-500">Booking ID</p>
 

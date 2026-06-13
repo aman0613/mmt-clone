@@ -1,28 +1,18 @@
-import { bookings } from "../data/bookings";
 import { Booking } from "../types/booking";
+import { bookingRepository } from "../repositories/booking.repository";
 
-export const getAllBookings = (): Booking[] => {
-  return bookings;
+export const getAllBookings = async () => {
+  return bookingRepository.findAll();
 };
 
-export const getBookingById = (bookingId: number): Booking | undefined => {
-  return bookings.find((booking) => booking.bookingId === bookingId);
+export const getBookingById = async (bookingId: number) => {
+  return bookingRepository.findById(bookingId);
 };
 
-export const createBooking = (booking: Booking): Booking => {
-  bookings.push(booking);
-
-  return booking;
+export const createBooking = async (booking: Booking) => {
+  return bookingRepository.create(booking);
 };
 
-export const cancelBooking = (bookingId: number): Booking | undefined => {
-  const booking = bookings.find((booking) => booking.bookingId === bookingId);
-
-  if (!booking) {
-    return undefined;
-  }
-
-  booking.status = "CANCELLED";
-
-  return booking;
+export const cancelBooking = async (bookingId: number) => {
+  return bookingRepository.cancel(bookingId);
 };
