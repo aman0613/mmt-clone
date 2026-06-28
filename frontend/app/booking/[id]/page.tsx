@@ -1,87 +1,112 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useRouter } from "next/navigation";
-
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { calculateBookingAmount } from "@/app/utils/pricing";
 import { Flight } from "@/types/flight";
 import { Traveller } from "@/types/traveller";
 import { getFlightById } from "@/services/flightService";
+import { getAuthToken } from "@/services/authService";
+
 export default function BookingPage() {
   const params = useParams();
-  const id = params.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const id = params.id as string;
+  const travellerCount = Number(searchParams.get("travellers") || "1");
+  const departureDate = searchParams.get("departureDate");
 
   const [flight, setFlight] = useState<Flight | null>(null);
+  const [travellers, setTravellers] = useState<Traveller[]>([]);
 
-  const [traveller, setTraveller] = useState<Traveller>({
-    fullName: "",
-    email: "",
-    phone: "",
-  });
-
-  const [errors, setErrors] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-  });
+  useEffect(() => {
+    setTravellers(
+      Array.from({ length: travellerCount }, () => ({
+        fullName: "",
+        email: "",
+        phone: "",
+      })),
+    );
+  }, [travellerCount]);
 
   useEffect(() => {
     const fetchFlight = async () => {
       try {
-        const data = await getFlightById(id as string);
+        const data = await getFlightById(id);
 
         setFlight(data);
       } catch (error) {
-        console.error(error);
+        console.error("Unable to load flight:", error);
       }
     };
 
     fetchFlight();
   }, [id]);
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTraveller({
-      ...traveller,
-      [e.target.name]: e.target.value,
-    });
-  };
 
-  const validateForm = () => {
-    let newErrors = {
-      fullName: "",
-      email: "",
-      phone: "",
+  const handleTravellerChange = (
+    index: number,
+    field: keyof Traveller,
+    value: string,
+  ) => {
+    const updatedTravellers = [...travellers];
+
+    updatedTravellers[index] = {
+      ...updatedTravellers[index],
+      [field]: value,
     };
 
-    let isValid = true;
+    setTravellers(updatedTravellers);
+  };
 
-    if (!traveller.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-      isValid = false;
+  const validateForm = (): boolean => {
+    for (const traveller of travellers) {
+      if (!traveller.fullName.trim()) {
+        return false;
+      }
+
+      if (!traveller.email.includes("@")) {
+        return false;
+      }
+
+      if (traveller.phone.trim().length < 10) {
+        return false;
+      }
     }
 
-    if (!traveller.email.includes("@")) {
-      newErrors.email = "Enter valid email";
-      isValid = false;
-    }
+    return true;
+  };
 
-    if (traveller.phone.length < 10) {
-      newErrors.phone = "Enter valid phone number";
-      isValid = false;
-    }
+  const getCurrentBookingPath = (): string => {
+    const queryString = searchParams.toString();
 
-    setErrors(newErrors);
-
-    return isValid;
+    return queryString ? `/booking/${id}?${queryString}` : `/booking/${id}`;
   };
 
   const handlePayment = () => {
     const isValid = validateForm();
 
-    if (!isValid) return;
+    if (!isValid) {
+      alert("Please fill all traveller details correctly");
+      return;
+    }
 
-    localStorage.setItem("selectedFlight", JSON.stringify(flight));
-    localStorage.setItem("travellerDetails", JSON.stringify(traveller));
+    if (!getAuthToken()) {
+      const currentBookingPath = getCurrentBookingPath();
+
+      router.push(`/login?redirect=${encodeURIComponent(currentBookingPath)}`);
+      return;
+    }
+
+    localStorage.setItem(
+      "selectedFlight",
+      JSON.stringify({
+        ...flight,
+        departureDate,
+      }),
+    );
+
+    localStorage.setItem("travellerDetails", JSON.stringify(travellers));
 
     router.push("/payment");
   };
@@ -90,12 +115,13 @@ export default function BookingPage() {
     return <div className="p-10 text-xl font-semibold">Loading flight...</div>;
   }
 
+  const { baseFare, taxesAndFees, convenienceFee, totalAmount } =
+    calculateBookingAmount(flight.price, travellerCount);
+
   return (
     <div className="min-h-screen bg-[#f2f2f2] p-6">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* LEFT SECTION */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Flight Details */}
           <div className="rounded-2xl bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between border-b pb-5">
               <div>
@@ -107,9 +133,7 @@ export default function BookingPage() {
               </div>
 
               <div className="text-right">
-                <p className="text-3xl font-bold text-blue-600">
-                  ₹{flight.price}
-                </p>
+                <p className="text-3xl font-bold text-blue-600">₹{baseFare}</p>
               </div>
             </div>
 
@@ -138,91 +162,110 @@ export default function BookingPage() {
             </div>
           </div>
 
-          {/* Traveller Details */}
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-6 text-2xl font-bold">Traveller Details</h2>
+            <h2 className="mb-6 text-2xl font-bold">
+              Traveller Details ({travellerCount})
+            </h2>
 
             <div className="space-y-5">
-              <div>
-                <label className="mb-2 block font-medium">Full Name</label>
+              {travellers.map((traveller, index) => (
+                <div key={index} className="mb-6 rounded-xl border p-4">
+                  <h3 className="mb-4 text-lg font-bold">
+                    Traveller {index + 1}
+                  </h3>
 
-                <input
-                  type="text"
-                  name="fullName"
-                  value={traveller.fullName}
-                  onChange={handleChange}
-                  placeholder="Enter full name"
-                  className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
-                />
+                  <div className="space-y-5">
+                    <div>
+                      <label className="mb-2 block font-medium">
+                        Full Name
+                      </label>
 
-                {errors.fullName && (
-                  <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>
-                )}
-              </div>
+                      <input
+                        type="text"
+                        value={traveller.fullName}
+                        onChange={(event) =>
+                          handleTravellerChange(
+                            index,
+                            "fullName",
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Enter full name"
+                        className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
+                      />
+                    </div>
 
-              <div>
-                <label className="mb-2 block font-medium">Email Address</label>
+                    <div>
+                      <label className="mb-2 block font-medium">
+                        Email Address
+                      </label>
 
-                <input
-                  type="email"
-                  name="email"
-                  value={traveller.email}
-                  onChange={handleChange}
-                  placeholder="Enter email"
-                  className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
-                />
+                      <input
+                        type="email"
+                        value={traveller.email}
+                        onChange={(event) =>
+                          handleTravellerChange(
+                            index,
+                            "email",
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Enter email"
+                        className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
+                      />
+                    </div>
 
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-500">{errors.email}</p>
-                )}
-              </div>
+                    <div>
+                      <label className="mb-2 block font-medium">
+                        Phone Number
+                      </label>
 
-              <div>
-                <label className="mb-2 block font-medium">Phone Number</label>
-
-                <input
-                  type="text"
-                  name="phone"
-                  value={traveller.phone}
-                  onChange={handleChange}
-                  placeholder="Enter phone number"
-                  className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
-                />
-
-                {errors.phone && (
-                  <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
-                )}
-              </div>
+                      <input
+                        type="text"
+                        value={traveller.phone}
+                        onChange={(event) =>
+                          handleTravellerChange(
+                            index,
+                            "phone",
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Enter phone number"
+                        className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* RIGHT SECTION */}
         <div>
           <div className="sticky top-5 rounded-2xl bg-white p-6 shadow-sm">
             <h2 className="mb-6 text-2xl font-bold">Fare Summary</h2>
 
             <div className="space-y-4 border-b pb-5">
               <div className="flex justify-between">
-                <p>Base Fare</p>
-                <p>₹{flight.price}</p>
+                <p>Base Fare ({travellerCount} Travellers)</p>
+                <p>₹{baseFare}</p>
               </div>
 
               <div className="flex justify-between">
                 <p>Taxes & Fees</p>
-                <p>₹499</p>
+                <p>₹{taxesAndFees}</p>
               </div>
 
               <div className="flex justify-between">
                 <p>Convenience Fee</p>
-                <p>₹199</p>
+                <p>₹{convenienceFee}</p>
               </div>
             </div>
 
             <div className="mt-5 flex justify-between text-xl font-bold">
               <p>Total Amount</p>
 
-              <p>₹{flight.price + 499 + 199}</p>
+              <p>₹{totalAmount}</p>
             </div>
 
             <button

@@ -1,24 +1,19 @@
-import { Flight } from "../types/flight";
-import { flights } from "../data/flights";
+import * as flightRepository from "../repositories/flight.repository";
 
-export const getFlights = (from?: string, to?: string): Flight[] => {
-  let filteredFlights = flights;
-
-  if (from) {
-    filteredFlights = filteredFlights.filter(
-      (flight) => flight.from.toLowerCase() === from.toLowerCase(),
-    );
-  }
-
-  if (to) {
-    filteredFlights = filteredFlights.filter(
-      (flight) => flight.to.toLowerCase() === to.toLowerCase(),
-    );
-  }
-
-  return filteredFlights;
+type FlightFilters = {
+  from?: string;
+  to?: string;
+  stops?: number;
+  airlines?: string[];
+  maxPrice?: number;
+  sortBy?: "price" | "duration";
+  sortOrder?: "asc" | "desc";
 };
 
-export const getFlightById = (id: number): Flight | undefined => {
-  return flights.find((flight) => flight.id === id);
+export const getFlights = async (filters: FlightFilters) => {
+  return flightRepository.findAll(filters);
+};
+
+export const getFlightById = async (id: number) => {
+  return flightRepository.findById(id);
 };

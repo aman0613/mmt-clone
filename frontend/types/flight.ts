@@ -8,4 +8,5 @@ export interface Flight {
   duration: string;
   price: number;
   stops: number;
+  departureDate: string;
 }

@@ -16,9 +16,17 @@ type FlightCardProps = {
   flight: Flight;
   from: string | null;
   to: string | null;
+  travellerCount: number;
+  departureDate: string | null;
 };
 
-export default function FlightCard({ flight, from, to }: FlightCardProps) {
+export default function FlightCard({
+  flight,
+  from,
+  to,
+  travellerCount,
+  departureDate,
+}: FlightCardProps) {
   const router = useRouter();
 
   return (
@@ -57,7 +65,11 @@ export default function FlightCard({ flight, from, to }: FlightCardProps) {
           </button>
 
           <button
-            onClick={() => router.push(`/booking/${flight.id}`)}
+            onClick={() =>
+              router.push(
+                `/booking/${flight.id}?travellers=${travellerCount}&departureDate=${departureDate}`,
+              )
+            }
             className="rounded-lg bg-blue-600 px-4 py-2 text-white"
           >
             Book

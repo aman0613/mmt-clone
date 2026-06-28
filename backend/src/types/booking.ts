@@ -12,5 +12,6 @@ export interface Booking extends Flight {
   bookingId: number;
   status: BookingStatus;
   bookedAt?: string;
-  traveller?: Traveller;
+  travellers: Traveller[];
+  departureDate?: string;
 }

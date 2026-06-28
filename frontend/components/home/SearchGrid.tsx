@@ -60,7 +60,7 @@ export default function SearchGrid({
 
   const [showTraveller, setShowTraveller] = useState(false);
 
-  const [adults, setAdults] = useState(1);
+  const [adults, setAdults] = useState(travellers);
 
   const [children, setChildren] = useState(0);
 

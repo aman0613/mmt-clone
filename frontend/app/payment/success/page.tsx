@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function SuccessPage() {
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get("bookingId");
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f2f2f2] p-6">
       <div className="w-full max-w-lg rounded-2xl bg-white p-10 text-center shadow-sm">
@@ -14,9 +18,11 @@ export default function SuccessPage() {
           Your flight booking has been completed successfully.
         </p>
 
-        <p className="mt-2 text-sm text-gray-500">
-          Booking ID: MMT{Date.now().toString().slice(-6)}
-        </p>
+        {bookingId && (
+          <p className="mt-2 text-sm text-gray-500">
+            Booking ID: MMT{bookingId}
+          </p>
+        )}
 
         <div className="mt-8 flex flex-col gap-4">
           <Link

@@ -33,6 +33,7 @@ export default function FlightsPage() {
   const [loading, setLoading] = useState(true);
 
   const [nonStopOnly, setNonStopOnly] = useState(false);
+  const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
 
   const [maxPrice, setMaxPrice] = useState(10000);
   const [sortBy, setSortBy] = useState("price");
@@ -57,7 +58,17 @@ export default function FlightsPage() {
   useEffect(() => {
     const fetchFlights = async () => {
       try {
-        const data = await getFlights(from || undefined, to || undefined);
+        setLoading(true);
+
+        const data = await getFlights({
+          from: from ?? undefined,
+          to: to ?? undefined,
+          stops: nonStopOnly ? 0 : undefined,
+          maxPrice,
+          airlines: selectedAirlines,
+          sortBy: sortBy === "duration" ? "duration" : "price",
+          sortOrder: sortBy === "price_desc" ? "desc" : "asc",
+        });
 
         setFlights(data);
       } catch (err) {
@@ -68,36 +79,24 @@ export default function FlightsPage() {
     };
 
     fetchFlights();
-  }, [from, to]);
+  }, [from, to, nonStopOnly, maxPrice, selectedAirlines, sortBy]);
   useEffect(() => {
     if (tripType === "oneway") {
       setReturnFlightDate("");
     }
   }, [tripType]);
 
-  const filteredFlights = flights
-    .filter((flight) => {
-      const priceMatch = flight.price <= maxPrice;
-
-      const stopMatch = !nonStopOnly || flight.stops === 0;
-
-      return priceMatch && stopMatch;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "price":
-          return a.price - b.price;
-
-        case "price_desc":
-          return b.price - a.price;
-
-        case "duration":
-          return parseInt(a.duration) - parseInt(b.duration);
-
-        default:
-          return 0;
+  const handleAirlineChange = (airline: string) => {
+    setSelectedAirlines((currentAirlines) => {
+      if (currentAirlines.includes(airline)) {
+        return currentAirlines.filter(
+          (selectedAirline) => selectedAirline !== airline,
+        );
       }
+
+      return [...currentAirlines, airline];
     });
+  };
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       {/* Summary */}
@@ -161,7 +160,22 @@ export default function FlightsPage() {
             />
             Non Stop only
           </label>
+          <div className="mt-6">
+            <h3 className="mb-3 font-semibold">Airlines</h3>
 
+            {["IndiGo", "Air India", "Vistara", "Akasa Air", "SpiceJet"].map(
+              (airline) => (
+                <label key={airline} className="mb-2 flex gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedAirlines.includes(airline)}
+                    onChange={() => handleAirlineChange(airline)}
+                  />
+                  {airline}
+                </label>
+              ),
+            )}
+          </div>
           <div className="mt-6">
             <p>Max Price: ₹{maxPrice}</p>
 
@@ -197,12 +211,14 @@ export default function FlightsPage() {
             <div className="text-center">Loading flights...</div>
           ) : (
             <div className="space-y-4">
-              {filteredFlights.map((flight) => (
+              {flights.map((flight) => (
                 <FlightCard
                   key={flight.id}
                   flight={flight}
                   from={from}
                   to={to}
+                  travellerCount={travellerCount}
+                  departureDate={departureDate}
                 />
               ))}
             </div>

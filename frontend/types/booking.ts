@@ -3,7 +3,7 @@ import { Traveller } from "./traveller";
 
 export interface Booking extends Flight {
   bookingId: number;
-  status: string;
+  status: "ACTIVE" | "CANCELLED";
   bookedAt?: string;
-  traveller?: Traveller;
+  travellers?: Traveller[];
 }

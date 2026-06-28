@@ -3,43 +3,111 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Booking } from "@/types/booking";
+import { calculateBookingAmount } from "@/app/utils/pricing";
 import {
-  getBookings,
+  BookingApiError,
   cancelBooking as deleteBooking,
+  getBookings,
 } from "@/services/bookingService";
+import { getAuthToken } from "@/services/authService";
+
+const LOGIN_REDIRECT_PATH = "/login?redirect=%2Fmy-trips";
+
 export default function MyTripsPage() {
   const router = useRouter();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [cancellingBookingId, setCancellingBookingId] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     const loadBookings = async () => {
-      const data = await getBookings();
+      if (!getAuthToken()) {
+        router.replace(LOGIN_REDIRECT_PATH);
+        return;
+      }
 
-      setBookings(data);
+      try {
+        setIsLoading(true);
+        setErrorMessage("");
+
+        const data = await getBookings();
+
+        setBookings(data);
+      } catch (error) {
+        if (error instanceof BookingApiError && error.status === 401) {
+          router.replace(LOGIN_REDIRECT_PATH);
+          return;
+        }
+
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Unable to load your trips. Please try again.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadBookings();
-  }, []);
+  }, [router]);
 
   const cancelBooking = async (bookingId: number) => {
     const confirmed = window.confirm(
       "Are you sure you want to cancel this booking?",
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
-    await deleteBooking(bookingId);
+    try {
+      setCancellingBookingId(bookingId);
+      setErrorMessage("");
 
-    const updatedBookings = await getBookings();
+      await deleteBooking(bookingId);
 
-    setBookings(updatedBookings);
+      const updatedBookings = await getBookings();
+
+      setBookings(updatedBookings);
+    } catch (error) {
+      if (error instanceof BookingApiError && error.status === 401) {
+        router.replace(LOGIN_REDIRECT_PATH);
+        return;
+      }
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to cancel this booking. Please try again.",
+      );
+    } finally {
+      setCancellingBookingId(null);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f2f2f2] p-6">
+        <p className="text-xl font-semibold">Loading your trips...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f2f2f2] p-6">
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-8 text-4xl font-bold">My Trips</h1>
+
+        {errorMessage && (
+          <div className="mb-6 rounded-xl bg-red-50 px-4 py-3 text-red-600">
+            {errorMessage}
+          </div>
+        )}
 
         {bookings.length === 0 ? (
           <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
@@ -51,70 +119,88 @@ export default function MyTripsPage() {
           </div>
         ) : (
           <div className="space-y-5">
-            {bookings.map((booking) => (
-              <div
-                key={booking.bookingId}
-                className="rounded-2xl bg-white p-6 shadow-sm"
-              >
-                <div className="flex items-center justify-between border-b pb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold">{booking.airline}</h2>
+            {bookings.map((booking) => {
+              const { totalAmount } = calculateBookingAmount(
+                booking.price,
+                booking.travellers?.length || 1,
+              );
 
-                    <p className="text-green-600">{booking.status}</p>
+              const isCancelling = cancellingBookingId === booking.bookingId;
+
+              return (
+                <div
+                  key={booking.bookingId}
+                  className="rounded-2xl bg-white p-6 shadow-sm"
+                >
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold">{booking.airline}</h2>
+
+                      <p className="text-green-600">{booking.status}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-blue-600">
+                        ₹{totalAmount}
+                      </p>
+
+                      <button
+                        onClick={() =>
+                          router.push(`/my-trips/${booking.bookingId}`)
+                        }
+                        className="mt-3 w-full cursor-pointer rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
+                      >
+                        View Details
+                      </button>
+
+                      <button
+                        onClick={() => cancelBooking(booking.bookingId)}
+                        disabled={
+                          booking.status === "CANCELLED" || isCancelling
+                        }
+                        className="mt-3 cursor-pointer rounded-lg bg-red-500 px-4 py-2 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isCancelling ? "Cancelling..." : "Cancel Booking"}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-600">
-                      ₹{booking.price}
-                    </p>
+                  <div className="mt-5 flex items-center justify-between">
+                    <div>
+                      <p className="text-3xl font-bold">
+                        {booking.departureTime}
+                      </p>
 
-                    <button
-                      onClick={() =>
-                        router.push(`/my-trips/${booking.bookingId}`)
-                      }
-                      className="mt-3 w-full cursor-pointer rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
-                    >
-                      View Details
-                    </button>
+                      <p className="text-gray-500">{booking.from}</p>
 
-                    <button
-                      onClick={() => cancelBooking(booking.bookingId)}
-                      className="mt-3 cursor-pointer rounded-lg bg-red-500 px-4 py-2 font-semibold text-black"
-                    >
-                      Cancel Booking
-                    </button>
+                      <p className="text-sm text-gray-500">
+                        {booking.departureDate}
+                      </p>
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-gray-500">{booking.duration}</p>
+
+                      <div className="my-2 h-[2px] w-40 bg-gray-300"></div>
+
+                      <p className="text-sm text-green-600">
+                        {booking.stops === 0
+                          ? "Non Stop"
+                          : `${booking.stops} Stop`}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-3xl font-bold">
+                        {booking.arrivalTime}
+                      </p>
+
+                      <p className="text-gray-500">{booking.to}</p>
+                    </div>
                   </div>
                 </div>
-
-                <div className="mt-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-3xl font-bold">
-                      {booking.departureTime}
-                    </p>
-
-                    <p className="text-gray-500">{booking.from}</p>
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-gray-500">{booking.duration}</p>
-
-                    <div className="my-2 h-[2px] w-40 bg-gray-300"></div>
-
-                    <p className="text-sm text-green-600">
-                      {booking.stops === 0
-                        ? "Non Stop"
-                        : `${booking.stops} Stop`}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-3xl font-bold">{booking.arrivalTime}</p>
-
-                    <p className="text-gray-500">{booking.to}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
